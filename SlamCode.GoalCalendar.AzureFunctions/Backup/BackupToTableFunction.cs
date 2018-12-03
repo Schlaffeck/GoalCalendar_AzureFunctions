@@ -15,11 +15,11 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
     {
         [FunctionName("BackupToTableFunction")]
         public static async Task<HttpResponseMessage> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", "put", Route = "backups/{version}/{id}")]HttpRequestMessage req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", "put", Route = Consts.Backups.ApiRouteBase + "/{version}/{id}")]HttpRequestMessage req,
             string version,
             string id,
-            [Table(Consts.BackupTable.Name, "{version}", "{id}")] BackupKey backupKey,
-            [Table(Consts.BackupTable.Name)] CloudTable table,
+            [Table(Consts.Backups.TableStorageName, "{version}", "{id}")] BackupKey backupKey,
+            [Table(Consts.Backups.TableStorageName)] CloudTable table,
             TraceWriter log)
         {
             log.Info("C# HTTP trigger function processed a request.");
@@ -48,7 +48,7 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
                 backupData = new BackupData();
             }
 
-            backupData.BackupVersion = Consts.BackupTable.BackupVersion;
+            backupData.BackupVersion = Consts.Backups.BackupVersion;
             backupData.DataFormat = req.Content.Headers.ContentType.MediaType;
             backupData.Data = await req.Content.ReadAsStringAsync();
             backupData.LastSaveUTCTime = DateTime.UtcNow;

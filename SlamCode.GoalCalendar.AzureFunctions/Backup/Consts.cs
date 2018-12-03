@@ -2,9 +2,11 @@
 {
     internal static class Consts
     {
-        internal static class BackupTable
+        internal static class Backups
         {
-            public const string Name = "goalCalendarBackupTable";
+            public const string TableStorageName = "goalCalendarBackupTable";
+
+            public const string ApiRouteBase = "backups";
 
             public const int BackupVersion = 0;
         }
