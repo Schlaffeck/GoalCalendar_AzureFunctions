@@ -8,7 +8,9 @@
 
             public const string ApiRouteBase = "backups";
 
-            public const int BackupVersion = 0;
+            public const string BackupsBlobContainerName = "backups";
+
+            public const int BackupVersion = 1;
         }
     }
 }

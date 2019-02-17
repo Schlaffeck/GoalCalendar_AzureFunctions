@@ -2,12 +2,17 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Configuration;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using SlamCode.GoalCalendar.AzureFunctions.Backup.Models;
+using Microsoft.WindowsAzure.Storage.Blob;
+using System.IO;
+using System.Diagnostics;
 
 namespace SlamCode.GoalCalendar.AzureFunctions.Backup
 {
@@ -54,6 +59,21 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
             backupData.LastSaveUTCTime = DateTime.UtcNow;
 
             log.Info($"Saving read data: {backupData.Data}");
+
+            var storageAccount = CloudStorageAccount.Parse();
+            var cloudBlobClient = storageAccount.CreateCloudBlobClient();
+            var container = cloudBlobClient.GetContainerReference(Consts.Backups.BackupsBlobContainerName);
+            await container.CreateIfNotExistsAsync(
+              BlobContainerPublicAccessType.Container,
+              new BlobRequestOptions(),
+              new OperationContext());
+            CloudBlockBlob blob = container.GetBlockBlobReference($"{version}_{id}");
+
+            blob.Properties.ContentType = req.Content.Headers.ContentType.MediaType;
+            await blob.UploadTextAsync(backupData.Data);
+
+            backupData.Data = blob.Uri.ToString();
+
             var update = TableOperation.InsertOrReplace(backupData);
             var updateResult = await table.ExecuteAsync(update);
 
