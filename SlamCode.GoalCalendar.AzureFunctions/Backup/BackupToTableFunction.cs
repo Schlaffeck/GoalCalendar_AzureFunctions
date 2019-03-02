@@ -60,14 +60,8 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
 
             log.Info($"Saving read data: {backupData.Data}");
 
-            var storageAccount = CloudStorageAccount.Parse();
-            var cloudBlobClient = storageAccount.CreateCloudBlobClient();
-            var container = cloudBlobClient.GetContainerReference(Consts.Backups.BackupsBlobContainerName);
-            await container.CreateIfNotExistsAsync(
-              BlobContainerPublicAccessType.Container,
-              new BlobRequestOptions(),
-              new OperationContext());
-            CloudBlockBlob blob = container.GetBlockBlobReference($"{version}_{id}");
+            var storageService = ServicesProvider.GetStorageService();
+            var blob = await storageService.GetCloudBlobReferenceAsync(Consts.Backups.BackupsBlobContainerName, $"{version}_{id}");
 
             blob.Properties.ContentType = req.Content.Headers.ContentType.MediaType;
             await blob.UploadTextAsync(backupData.Data);

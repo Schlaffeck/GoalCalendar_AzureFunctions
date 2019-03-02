@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
@@ -11,7 +12,7 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
     public static class ReadBackupFromTableFunction
     {
         [FunctionName("ReadBackupFromTableFunction")]
-        public static HttpResponseMessage Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = Consts.Backups.ApiRouteBase + "/{version}/{id}")]HttpRequestMessage req,
+        public async static Task<HttpResponseMessage> RunAsync([HttpTrigger(AuthorizationLevel.Function, "get", Route = Consts.Backups.ApiRouteBase + "/{version}/{id}")]HttpRequestMessage req,
             string version,
             string id,
             [Table(Consts.Backups.TableStorageName, "{version}", "{id}")] BackupData backupData,
@@ -24,7 +25,11 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
                 return req.CreateResponse(HttpStatusCode.NotFound);
             }
 
-            return req.CreateResponse(HttpStatusCode.OK, backupData.Data, backupData.DataFormat);
+            var storageService = ServicesProvider.GetStorageService();
+            var blob = await storageService.GetCloudBlobReferenceAsync(Consts.Backups.BackupsBlobContainerName, $"{version}_{id}");
+            var text = await blob.DownloadTextAsync();
+
+            return req.CreateResponse(HttpStatusCode.OK, text, backupData.DataFormat);
         }
     }
 }
