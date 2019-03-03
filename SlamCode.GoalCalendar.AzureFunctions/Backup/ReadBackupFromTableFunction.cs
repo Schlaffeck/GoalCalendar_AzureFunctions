@@ -1,10 +1,12 @@
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
+using Newtonsoft.Json.Linq;
 using SlamCode.GoalCalendar.AzureFunctions.Backup.Models;
 
 namespace SlamCode.GoalCalendar.AzureFunctions.Backup
@@ -29,7 +31,11 @@ namespace SlamCode.GoalCalendar.AzureFunctions.Backup
             var blob = await storageService.GetCloudBlobReferenceAsync(Consts.Backups.BackupsBlobContainerName, $"{version}_{id}");
             var text = await blob.DownloadTextAsync();
 
-            return req.CreateResponse(HttpStatusCode.OK, text, backupData.DataFormat);
+            var formatter = ServicesProvider.GetDataFormatter();
+            var formatResult = formatter.FormatInitialData(text, backupData.DataFormat);
+            return formatResult.Formatted ?
+                req.CreateResponse(HttpStatusCode.OK, formatResult.FormattedObject, backupData.DataFormat) :
+                req.CreateResponse(HttpStatusCode.OK, text, backupData.DataFormat);
         }
     }
 }
